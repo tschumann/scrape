@@ -1,10 +1,46 @@
 import bs4
-import requests
+import imp
 import sys
 import urlparse
 
+using_requests = False
+
+if imp.find_module('requests'):
+	import requests
+	using_requests = True
+else:
+	import urllib2
+	using_requests = False
+
 home_url = None
 visited_urls = []
+
+class Page:
+	links = []
+	sounds = []
+	images = []
+	scripts = []
+	videos = []
+			
+	def __init__(self, url):
+		self._get_page(url)
+		
+	def _get_page(url):
+		global using_requests
+		
+		if using_requests:
+			response = requests.get(url)
+			
+			if not response.ok:
+				print("Could not access ", url)
+				
+				return None
+			
+			if 'content-type' in response.headers:
+				content_type = response.headers['content-type']
+		else:
+			response = urllib2.Request(url)
+			data = response.read()
 
 def process_page(url):
     global traversed_links

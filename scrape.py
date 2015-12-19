@@ -16,6 +16,7 @@ home_url = None
 visited_urls = []
 
 class Page:
+	html = ''
 	links = []
 	sounds = []
 	images = []
@@ -24,8 +25,11 @@ class Page:
 			
 	def __init__(self, url):
 		self._get_page(url)
-		
-	def _get_page(url):
+	
+	def _download(self, url):
+		"""
+		Given a URL, download it.
+		"""
 		global using_requests
 		
 		if using_requests:
@@ -40,8 +44,35 @@ class Page:
 				content_type = response.headers['content-type']
 		else:
 			response = urllib2.Request(url)
-			data = response.read()
+			return response.read()
+		
+	def _get_page(self, url):
+		self.html = self._download(url)
+			
+		# parse the response HTML
+		soup = bs4.BeautifulSoup(self.html)
 
+		# find all links and media
+		# TODO: handle embed and object, get the URLs of these
+		self.links = soup.find_all("a")
+		self.sounds = soup.find_all("audio")
+		self.images = soup.find_all("img")
+		self.scripts = soup.find_all("script")
+		self.videos = soup.find_all("video")
+			
+	def save(self):
+		for image in self.images:
+			pass
+
+		for sound in self.sounds:
+			pass
+
+		for script in self.scripts:
+			pass
+		
+		for video in self.videos:
+			pass
+			
 def process_page(url):
     global traversed_links
 

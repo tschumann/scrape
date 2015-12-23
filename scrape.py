@@ -16,6 +16,7 @@ home_url = None
 visited_urls = []
 
 class Page:
+	url = ''
 	html = ''
 	links = []
 	sounds = []
@@ -24,7 +25,11 @@ class Page:
 	videos = []
 			
 	def __init__(self, url):
-		self._get_page(url)
+		self.url = url
+		self._get_page(self.url)
+	
+	def get_domain():
+		pass
 	
 	def _download(self, url):
 		"""

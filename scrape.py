@@ -3,7 +3,15 @@ import imp
 import sys
 import urlparse
 
+using_beautifulsoup = False
 using_requests = False
+
+if imp.find_module('bs4'):
+	import bs4
+	using_beautifulsoup = True
+else:
+	import HTMLParser
+	using_beautifulsoup = False
 
 if imp.find_module('requests'):
 	import requests
@@ -16,54 +24,71 @@ home_url = None
 visited_urls = []
 
 class Page:
-	url = ''
+	raw_url = ''
+	normalised_url = ''
 	html = ''
 	links = []
 	sounds = []
 	images = []
 	scripts = []
 	videos = []
+	embeds = []
+	objects = []
 			
 	def __init__(self, url):
-		self.url = url
-		self._get_page(self.url)
+		# split the URL into its components
+		split_url = urlparse.urlparse(url)
+		# normalise the URL by clearing the fragment
+		split_url.fragment = ''
+
+		self.normalised_url = split_url.geturl()
+		self.raw_url = url
+		
+		self._get_page()
 	
 	def get_domain():
-		pass
-	
-	def _download(self, url):
 		"""
-		Given a URL, download it.
+		Get the domain that this page is from.
+		"""
+		return normalised_url.netloc
+	
+	def _download(self):
+		"""
+		Download the page.
 		"""
 		global using_requests
 		
 		if using_requests:
-			response = requests.get(url)
+			response = requests.get(self.raw_url)
 			
 			if not response.ok:
-				print("Could not access ", url)
+				print("Could not access ", self.raw_url)
 				
 				return None
 			
 			if 'content-type' in response.headers:
 				content_type = response.headers['content-type']
 		else:
-			response = urllib2.Request(url)
+			response = urllib2.Request(self.raw_url)
 			return response.read()
 		
-	def _get_page(self, url):
-		self.html = self._download(url)
-			
-		# parse the response HTML
-		soup = bs4.BeautifulSoup(self.html)
+	def _get_page(self):
+		self.html = self._download(self.raw_url)
+		
+		if using_beautifulsoup:
+			# parse the response HTML
+			soup = bs4.BeautifulSoup(self.html)
 
-		# find all links and media
-		# TODO: handle embed and object, get the URLs of these
-		self.links = soup.find_all("a")
-		self.sounds = soup.find_all("audio")
-		self.images = soup.find_all("img")
-		self.scripts = soup.find_all("script")
-		self.videos = soup.find_all("video")
+			# find all links and media
+			self.links = soup.find_all("a")
+			self.sounds = soup.find_all("audio")
+			self.images = soup.find_all("img")
+			self.scripts = soup.find_all("script")
+			self.videos = soup.find_all("video")
+			self.embeds = soup.find_all("embed")
+			self.objects = soup.find_all("object")
+		else:
+			pass
 			
 	def save(self):
 		for image in self.images:
@@ -76,6 +101,12 @@ class Page:
 			pass
 		
 		for video in self.videos:
+			pass
+		
+		for embed in self.embeds:
+			pass
+		
+		for object in self.objects:
 			pass
 			
 def process_page(url):

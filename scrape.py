@@ -46,11 +46,11 @@ class Page:
 		
 		self._get_page()
 	
-	def get_domain():
+	def get_domain(self):
 		"""
 		Get the domain that this page is from.
 		"""
-		return normalised_url.netloc
+		return self.normalised_url.netloc
 	
 	def _download(self):
 		"""

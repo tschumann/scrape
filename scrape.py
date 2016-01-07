@@ -20,7 +20,7 @@ else:
 	import urllib2
 	using_requests = False
 
-home_url = None
+# TODO: refactor this but somehow keep a quick lookup of what's been seen and what hasn't
 visited_urls = []
 
 class Page:
@@ -71,6 +71,12 @@ class Page:
 		else:
 			response = urllib2.Request(self.raw_url)
 			return response.read()
+	
+	def _download_children(self):
+		"""
+		"""
+		for link in self.links:
+			pass
 		
 	def _get_page(self):
 		self.html = self._download(self.raw_url)
@@ -170,7 +176,6 @@ if len(sys.argv) < 2:
     print("No site specified")
     sys.exit()
 
-# remember the home page
 home_url = urlparse.urlparse(sys.argv[1])
 
-process_page(sys.argv[1])
+page = Page(home_url)

@@ -20,7 +20,6 @@ else:
 	import urllib2
 	using_requests = False
 
-# TODO: refactor this but somehow keep a quick lookup of what's been seen and what hasn't
 visited_urls = []
 
 class Page:
@@ -45,6 +44,11 @@ class Page:
 		self.raw_url = url
 		
 		self._get_page()
+
+	def get_url(self):
+		"""
+		"""
+		return self.normalised_url
 	
 	def get_domain(self):
 		"""
@@ -179,3 +183,5 @@ if len(sys.argv) < 2:
 home_url = urlparse.urlparse(sys.argv[1])
 
 page = Page(home_url)
+
+# at this point add page.get_url to visited_urls, then recursively do this using a method to get all child pages

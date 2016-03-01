@@ -25,6 +25,7 @@ visited_urls = []
 class Page:
 	raw_url = ''
 	normalised_url = ''
+	domain = ''
 	html = ''
 	links = []
 	sounds = []
@@ -37,11 +38,14 @@ class Page:
 	def __init__(self, url):
 		# split the URL into its components
 		split_url = urlparse.urlparse(url)
+		# TODO: look at urlparse.urldefrag
 		# normalise the URL by clearing the fragment
 		split_url.fragment = ''
 
 		self.normalised_url = split_url.geturl()
 		self.raw_url = url
+		# TODO: clean up the domain there may be a trailing :portnum
+		self.domain = split_url.netloc
 		
 		self._get_page()
 
@@ -55,6 +59,15 @@ class Page:
 		Get the domain that this page is from.
 		"""
 		return self.normalised_url.netloc
+		
+	def should_process_page(self, url):
+		"""
+		Whether this page should be processed.
+		"""
+		split_url = urlparse.urlparse(url)
+		
+		# TODO: clean up the domain there may be a trailing :portnum
+		return domain == split_url.netloc
 	
 	def _download(self):
 		"""
@@ -80,6 +93,7 @@ class Page:
 		"""
 		"""
 		for link in self.links:
+			# TODO: call should_process_page on each link
 			pass
 		
 	def _get_page(self):
@@ -129,11 +143,6 @@ def process_page(url):
 
     normalised_url = split_url.geturl()
 
-    # don't go wild and start trying to download sites external to what was requested
-    if split_url.netloc != home_url.netloc:
-        print("Skipping external link to", url)
-        return
-
     # if we've already visited this page
     if normalised_url in visited_urls:
         return
@@ -154,14 +163,6 @@ def process_page(url):
         if content_type == 'text/html':
             # parse the response HTML
             soup = bs4.BeautifulSoup(response.text)
-
-            # find all links and media
-            # TODO: handle embed and object
-            links = soup.find_all("a")
-            sounds = soup.find_all("audio")
-            images = soup.find_all("img")
-            scripts = soup.find_all("script")
-            videos = soup.find_all("video")
 
             page = open(split_url.path or 'index.html')
             page.write(response.text)

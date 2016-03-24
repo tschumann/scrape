@@ -44,7 +44,7 @@ class Page:
 
 		self.normalised_url = split_url.geturl()
 		self.raw_url = url
-		# TODO: clean up the domain there may be a trailing :portnum
+		# TODO: clean up the domain as there may be a trailing :portnum
 		self.domain = split_url.netloc
 		
 		self._get_page()
@@ -66,7 +66,7 @@ class Page:
 		"""
 		split_url = urlparse.urlparse(url)
 		
-		# TODO: clean up the domain there may be a trailing :portnum
+		# TODO: clean up the domain as there may be a trailing :portnum
 		return domain == split_url.netloc
 	
 	def _download(self):
@@ -85,8 +85,14 @@ class Page:
 			
 			if 'content-type' in response.headers:
 				content_type = response.headers['content-type']
+			else:
+				# TODO: possible to not have a mime-type? check if it looks like HTML?
+				pass
 		else:
 			response = urllib2.Request(self.raw_url)
+			
+			# TODO: check response status code
+			
 			return response.read()
 	
 	def _download_children(self):
@@ -136,13 +142,6 @@ class Page:
 def process_page(url):
     global traversed_links
 
-    # split the URL into its components
-    split_url = urlparse.urlparse(url)
-    # normalise the URL by clearing the fragment
-    split_url.fragment = ''
-
-    normalised_url = split_url.geturl()
-
     # if we've already visited this page
     if normalised_url in visited_urls:
         return
@@ -173,9 +172,6 @@ def process_page(url):
         else:
             asset = open(split_url.path)
             asset.write(response.text)
-    else:
-        # TODO: possible to not have a mime-type? check if it looks like HTML?
-        pass
 
 if len(sys.argv) < 2:
     print("No site specified")

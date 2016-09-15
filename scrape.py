@@ -1,24 +1,8 @@
 import bs4
 import imp
+import requests
 import sys
-import urlparse
-
-using_beautifulsoup = False
-using_requests = False
-
-if imp.find_module('bs4'):
-	import bs4
-	using_beautifulsoup = True
-else:
-	import HTMLParser
-	using_beautifulsoup = False
-
-if imp.find_module('requests'):
-	import requests
-	using_requests = True
-else:
-	import urllib2
-	using_requests = False
+import urlparse	
 
 visited_urls = []
 
@@ -73,27 +57,18 @@ class Page:
 		"""
 		Download the page.
 		"""
-		global using_requests
+		response = requests.get(self.raw_url)
 		
-		if using_requests:
-			response = requests.get(self.raw_url)
+		if not response.ok:
+			print("Could not access ", self.raw_url)
 			
-			if not response.ok:
-				print("Could not access ", self.raw_url)
-				
-				return None
-			
-			if 'content-type' in response.headers:
-				content_type = response.headers['content-type']
-			else:
-				# TODO: possible to not have a mime-type? check if it looks like HTML?
-				pass
+			return None
+		
+		if 'content-type' in response.headers:
+			content_type = response.headers['content-type']
 		else:
-			response = urllib2.Request(self.raw_url)
-			
-			# TODO: check response status code
-			
-			return response.read()
+			# TODO: possible to not have a mime-type? check if it looks like HTML?
+			pass
 	
 	def _download_children(self):
 		"""
@@ -104,21 +79,18 @@ class Page:
 		
 	def _get_page(self):
 		self.html = self._download(self.raw_url)
-		
-		if using_beautifulsoup:
-			# parse the response HTML
-			soup = bs4.BeautifulSoup(self.html)
 
-			# find all links and media
-			self.links = soup.find_all("a")
-			self.sounds = soup.find_all("audio")
-			self.images = soup.find_all("img")
-			self.scripts = soup.find_all("script")
-			self.videos = soup.find_all("video")
-			self.embeds = soup.find_all("embed")
-			self.objects = soup.find_all("object")
-		else:
-			pass
+		# parse the response HTML
+		soup = bs4.BeautifulSoup(self.html)
+
+		# find all links and media
+		self.links = soup.find_all("a")
+		self.sounds = soup.find_all("audio")
+		self.images = soup.find_all("img")
+		self.scripts = soup.find_all("script")
+		self.videos = soup.find_all("video")
+		self.embeds = soup.find_all("embed")
+		self.objects = soup.find_all("object")
 			
 	def save(self):
 		for image in self.images:

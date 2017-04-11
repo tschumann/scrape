@@ -9,6 +9,9 @@ visited_urls = []
 class Page:
 	raw_url = ''
 	normalised_url = ''
+	# the pages that are linked from this page
+	children = []
+	# this page's domain
 	domain = ''
 	html = ''
 	links = []
@@ -46,8 +49,9 @@ class Page:
 		
 	def should_process_page(self, url):
 		"""
-		Whether this page should be processed.
+		Whether this page should be processed. Only process pages that are on the same domain as the first requested page.
 		"""
+		# parse the URL in question
 		split_url = urlparse.urlparse(url)
 		
 		# TODO: clean up the domain as there may be a trailing :portnum
@@ -73,10 +77,14 @@ class Page:
 	def _download_children(self):
 		"""
 		"""
-		for link in self.links:
-			# TODO: call should_process_page on each link
-			pass
-		
+		# instantiate the children
+		if not self.children:
+			for link in self.links:
+				self.children.append(Page(self.link.get('href')))
+
+		for child in self.children:
+			child.save()
+
 	def _get_page(self):
 		self.html = self._download(self.raw_url)
 
@@ -93,6 +101,8 @@ class Page:
 		self.objects = soup.find_all("object")
 			
 	def save(self):
+		self._download()
+
 		for image in self.images:
 			pass
 

@@ -2,7 +2,7 @@ import bs4
 import imp
 import requests
 import sys
-import urlparse	
+import urllib.parse
 
 visited_urls = []
 
@@ -120,47 +120,17 @@ class Page:
 		
 		for object in self.objects:
 			pass
-			
-def process_page(url):
-    global traversed_links
 
-    # if we've already visited this page
-    if normalised_url in visited_urls:
-        return
-    else:
-        # remember that we visited the page
-        visited_urls.append(visited_urls)
+class DownloadManager:
+	pages = []
 
-    # download the page itself
-    response = requests.get(url)
+	def __init__(self, url):
+		home_url = urlparse.urlparse(url)
 
-    if not response.ok:
-        print("Could not access", url)
-        return
-
-    if 'content-type' in response.headers:
-        content_type = response.headers['content-type']
-
-        if content_type == 'text/html':
-            # parse the response HTML
-            soup = bs4.BeautifulSoup(response.text)
-
-            page = open(split_url.path or 'index.html')
-            page.write(response.text)
-
-            # process all child pages
-            for link in links:
-                process_page(link.href)
-        else:
-            asset = open(split_url.path)
-            asset.write(response.text)
+		page = Page(home_url)
 
 if len(sys.argv) < 2:
     print("No site specified")
     sys.exit()
 
-home_url = urlparse.urlparse(sys.argv[1])
-
-page = Page(home_url)
-
-# at this point add page.get_url to visited_urls, then recursively do this using a method to get all child pages
+download_manager = DownloadManager(sys.argv[1])

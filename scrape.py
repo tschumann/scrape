@@ -24,17 +24,17 @@ class Page:
 			
 	def __init__(self, url):
 		# split the URL into its components
-		split_url = urlparse.urlparse(url)
+		split_url = urllib.parse.urlparse(url)
 		# TODO: look at urlparse.urldefrag
 		# normalise the URL by clearing the fragment
-		split_url.fragment = ''
+		# split_url.fragment = ''
 
 		self.normalised_url = split_url.geturl()
 		self.raw_url = url
 		# TODO: clean up the domain as there may be a trailing :portnum
 		self.domain = split_url.netloc
 		
-		self._get_page()
+		# self._get_page()
 
 	def get_url(self):
 		"""
@@ -72,7 +72,7 @@ class Page:
 			content_type = response.headers['content-type']
 		else:
 			# TODO: possible to not have a mime-type? check if it looks like HTML?
-			pass
+			return None
 	
 	def _download_children(self):
 		"""
@@ -86,19 +86,22 @@ class Page:
 			child.save()
 
 	def _get_page(self):
-		self.html = self._download(self.raw_url)
+		self.html = self._download()
 
-		# parse the response HTML
-		soup = bs4.BeautifulSoup(self.html)
+		if self.html:
+			# parse the response HTML
+			soup = bs4.BeautifulSoup(self.html)
 
-		# find all links and media
-		self.links = soup.find_all("a")
-		self.sounds = soup.find_all("audio")
-		self.images = soup.find_all("img")
-		self.scripts = soup.find_all("script")
-		self.videos = soup.find_all("video")
-		self.embeds = soup.find_all("embed")
-		self.objects = soup.find_all("object")
+			# find all links and media
+			self.links = soup.find_all("a")
+			self.sounds = soup.find_all("audio")
+			self.images = soup.find_all("img")
+			self.scripts = soup.find_all("script")
+			self.videos = soup.find_all("video")
+			self.embeds = soup.find_all("embed")
+			self.objects = soup.find_all("object")
+		else:
+			pass
 			
 	def save(self):
 		self._download()
@@ -125,12 +128,13 @@ class DownloadManager:
 	pages = []
 
 	def __init__(self, url):
-		home_url = urlparse.urlparse(url)
+		home_url = urllib.parse.urlparse(url)
 
 		page = Page(home_url)
 
-if len(sys.argv) < 2:
-    print("No site specified")
-    sys.exit()
+if __name__ == '__main__':
+	if len(sys.argv) < 2:
+		print("No site specified")
+		sys.exit()
 
-download_manager = DownloadManager(sys.argv[1])
+	download_manager = DownloadManager(sys.argv[1])

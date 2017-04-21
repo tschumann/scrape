@@ -45,7 +45,7 @@ class Page:
 		"""
 		Get the domain that this page is from.
 		"""
-		return self.normalised_url.netloc
+		return self.domain
 		
 	def should_process_page(self, url):
 		"""

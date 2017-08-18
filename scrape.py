@@ -1,5 +1,6 @@
 import bs4
 import imp
+import os
 import requests
 import sys
 import urllib.parse
@@ -13,6 +14,9 @@ class Page:
 	children = []
 	# this page's domain
 	domain = ''
+	# this page's path
+	path = ''
+	# this page's content
 	html = ''
 	links = []
 	sounds = []
@@ -33,8 +37,10 @@ class Page:
 		self.raw_url = url
 		# TODO: clean up the domain as there may be a trailing :portnum
 		self.domain = split_url.netloc
+		self.path = split_url.path
 		
-		# self._get_page()
+		if self.path == '/':
+			self.path = 'index.html'
 
 	def get_url(self):
 		"""
@@ -70,6 +76,9 @@ class Page:
 		
 		if 'content-type' in response.headers:
 			content_type = response.headers['content-type']
+			page = open(self.domain + "/" + self.path, 'wb')
+			page.write(response.content)
+			page.close()
 		else:
 			# TODO: possible to not have a mime-type? check if it looks like HTML?
 			return None
@@ -104,6 +113,9 @@ class Page:
 			pass
 			
 	def save(self):
+		if not os.path.exists(self.domain):
+			os.makedirs(self.domain)
+
 		self._download()
 
 		for image in self.images:
@@ -128,9 +140,8 @@ class DownloadManager:
 	pages = []
 
 	def __init__(self, url):
-		home_url = urllib.parse.urlparse(url)
-
-		page = Page(home_url)
+		page = Page(url)
+		page.save()
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:

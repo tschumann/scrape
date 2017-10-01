@@ -58,10 +58,10 @@ class Page:
 		Whether this page should be processed. Only process pages that are on the same domain as the first requested page.
 		"""
 		# parse the URL in question
-		split_url = urlparse.urlparse(url)
+		split_url = urllib.parse.urlparse(url)
 		
 		# TODO: clean up the domain as there may be a trailing :portnum
-		return domain == split_url.netloc
+		return self.domain == split_url.netloc
 	
 	def _download(self):
 		"""

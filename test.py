@@ -4,8 +4,8 @@ import sys
 
 from unittest.mock import MagicMock
 
-# deal with the confusing insanity of Python's import rules
-sys.path.append('..')
+# add the parent directory to the path (make it absolute to this works regardless of where it's called from)
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "..")
 
 from scrape.scrape import Page
 
@@ -18,6 +18,18 @@ class TestScrape(unittest.TestCase):
 	def test_get_page_domain(self):
 		page = Page("http://dev.lan")
 		self.assertEqual(page.get_domain(), "dev.lan")
+		
+	def test_should_process_page_same_domain_same_scheme(self):
+		page = Page("http://dev.lan")
+		self.assertEqual(page.should_process_page("http://dev.lan/news"), True)
+	
+	def test_should_process_page_same_domain_different_scheme(self):
+		page = Page("http://dev.lan")
+		self.assertEqual(page.should_process_page("https://dev.lan/news"), True)
+		
+	def test_should_process_page_different_domain(self):
+		page = Page("http://dev.lan")
+		self.assertEqual(page.should_process_page("https://www.wizzle.wazzle"), False)
 
 if __name__ == '__main__':
     unittest.main()

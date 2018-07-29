@@ -11,11 +11,15 @@ from scrape.scrape import Page
 
 class TestScrape(unittest.TestCase):
 
-	def test_get_page_url(self):
+	def tearDown(self):
+		if os.path.exists('dev.lan'):
+			os.rmdir("dev.lan")
+
+	def test_get_url(self):
 		page = Page("http://dev.lan")
 		self.assertEqual(page.get_url(), "http://dev.lan")
 		
-	def test_get_page_domain(self):
+	def test_get_domain(self):
 		page = Page("http://dev.lan")
 		self.assertEqual(page.get_domain(), "dev.lan")
 		
@@ -30,6 +34,11 @@ class TestScrape(unittest.TestCase):
 	def test_should_process_page_different_domain(self):
 		page = Page("http://dev.lan")
 		self.assertEqual(page.should_process_page("https://www.wizzle.wazzle"), False)
+
+	def test_download_creates_directory(self):
+		page = Page("http://dev.lan")
+		page.save()
+		self.assertEqual(os.path.exists('dev.lan'), True)
 
 if __name__ == '__main__':
     unittest.main()

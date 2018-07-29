@@ -5,6 +5,8 @@ import requests
 import sys
 import urllib.parse
 
+from requests.exceptions import ConnectionError
+
 visited_urls = []
 
 class Page:
@@ -67,7 +69,10 @@ class Page:
 		"""
 		Download the page.
 		"""
-		response = requests.get(self.raw_url)
+		try:
+			response = requests.get(self.raw_url)
+		except ConnectionError:
+			return None
 		
 		if not response.ok:
 			print("Could not access ", self.raw_url)
@@ -114,6 +119,7 @@ class Page:
 			
 	def save(self):
 		if not os.path.exists(self.domain):
+			print("Creating directory " + self.domain)
 			os.makedirs(self.domain)
 
 		self._download()

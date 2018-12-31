@@ -18,6 +18,10 @@ class TestScrape(unittest.TestCase):
 	def test_get_url(self):
 		page = Page("http://dev.lan")
 		self.assertEqual(page.get_url(), "http://dev.lan")
+
+	def test_get_url_with_fragment(self):
+		page = Page("http://dev.lan/#what")
+		self.assertEqual(page.get_url(), "http://dev.lan/")
 		
 	def test_get_domain(self):
 		page = Page("http://dev.lan")

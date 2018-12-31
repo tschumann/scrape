@@ -29,11 +29,10 @@ class Page:
 	objects = []
 			
 	def __init__(self, url):
+		# cut off the URL fragment (if any)
+		(defragged_url, frag) = urllib.parse.urldefrag(url)
 		# split the URL into its components
-		split_url = urllib.parse.urlparse(url)
-		# TODO: look at urlparse.urldefrag
-		# normalise the URL by clearing the fragment
-		# split_url.fragment = ''
+		split_url = urllib.parse.urlparse(defragged_url)
 
 		self.normalised_url = split_url.geturl()
 		self.raw_url = url

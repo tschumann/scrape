@@ -19,7 +19,6 @@ class Page:
 	# this page's path
 	path = ''
 	# this page's content
-	html = ''
 	links = []
 	sounds = []
 	images = []
@@ -64,17 +63,18 @@ class Page:
 		# TODO: clean up the domain as there may be a trailing :portnum
 		return self.domain == split_url.netloc
 	
-	def _download(self):
+	def _download_html(self):
 		"""
 		Download the page.
 		"""
 		try:
 			response = requests.get(self.raw_url)
 		except ConnectionError:
+			print("ConnectionError when connecting to " + self.raw_url)
 			return None
 		
 		if not response.ok:
-			print("Could not access ", self.raw_url)
+			print("Could not access " + self.raw_url)
 			
 			return None
 		
@@ -83,8 +83,10 @@ class Page:
 			page = open(self.domain + "/" + self.path, 'wb')
 			page.write(response.content)
 			page.close()
+
+			return response.content
 		else:
-			# TODO: possible to not have a mime-type? check if it looks like HTML?
+			print("No content-type in response headers")
 			return None
 	
 	def _download_children(self):
@@ -98,30 +100,26 @@ class Page:
 		for child in self.children:
 			child.save()
 
-	def _get_page(self):
-		self.html = self._download()
+	def _process_html(self, html):
+		# parse the response HTML
+		soup = bs4.BeautifulSoup(html, "html.parser")
 
-		if self.html:
-			# parse the response HTML
-			soup = bs4.BeautifulSoup(self.html)
+		# find all links and media
+		self.links = soup.find_all("a")
+		self.sounds = soup.find_all("audio")
+		self.images = soup.find_all("img")
+		self.scripts = soup.find_all("script")
+		self.videos = soup.find_all("video")
+		self.embeds = soup.find_all("embed")
+		self.objects = soup.find_all("object")
 
-			# find all links and media
-			self.links = soup.find_all("a")
-			self.sounds = soup.find_all("audio")
-			self.images = soup.find_all("img")
-			self.scripts = soup.find_all("script")
-			self.videos = soup.find_all("video")
-			self.embeds = soup.find_all("embed")
-			self.objects = soup.find_all("object")
-		else:
-			pass
-			
 	def save(self):
-		if not os.path.exists(self.domain):
-			print("Creating directory " + self.domain)
-			os.makedirs(self.domain)
+		if not os.path.exists(self.get_domain()):
+			print("Creating directory " + self.get_domain())
+			os.makedirs(self.get_domain())
 
-		self._download()
+		html = self._download_html()
+		self._process_html(html)
 
 		for image in self.images:
 			pass

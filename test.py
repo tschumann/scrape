@@ -41,8 +41,12 @@ class TestScrape(unittest.TestCase):
 
 	def test_download_creates_directory(self):
 		page = Page("http://dev.lan")
+		page._download_html = self._mock_download_html
 		page.save()
 		self.assertEqual(os.path.exists('dev.lan'), True)
+
+	def _mock_download_html(self):
+		return ""
 
 if __name__ == '__main__':
     unittest.main()

@@ -6,16 +6,15 @@ import urllib.parse
 
 from requests.exceptions import ConnectionError
 
-visited_urls = []
-
 class Page:
+	# the URL that was passed in
 	raw_url = ''
 	normalised_url = ''
 	# the pages that are linked from this page
 	children = []
 	# this page's domain
 	domain = ''
-	# this page's path
+	# this page's path (bit after the domain)
 	path = ''
 	# this page's content
 	links = []
@@ -32,8 +31,9 @@ class Page:
 		# split the URL into its components
 		split_url = urllib.parse.urlparse(defragged_url)
 
-		self.normalised_url = split_url.geturl()
 		self.raw_url = url
+		self.normalised_url = split_url.geturl()
+
 		# TODO: clean up the domain as there may be a trailing :portnum
 		self.domain = split_url.netloc
 		self.path = split_url.path
@@ -90,11 +90,17 @@ class Page:
 	
 	def _download_children(self):
 		"""
+		Download the child pages
 		"""
-		# instantiate the children
 		if not self.children:
+			# look at all the links on the page
 			for link in self.links:
-				self.children.append(Page(self.link.get('href')))
+				# pull out the URL
+				url = self.link.get('href')
+				# if the URL is on the same domain
+				if self.should_process_page(url):
+					# add it to the list of pages to download
+					self.children.append(Page(url))
 
 		for child in self.children:
 			child.save()

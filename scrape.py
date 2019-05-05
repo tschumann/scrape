@@ -40,11 +40,6 @@ class Page:
 		
 		if self.path == '/':
 			self.path = 'index.html'
-
-	def get_url(self):
-		"""
-		"""
-		return self.normalised_url
 	
 	def get_domain(self):
 		"""
@@ -145,7 +140,6 @@ class Page:
 			pass
 
 class DownloadManager:
-	pages = []
 
 	def __init__(self, url):
 		page = Page(url)

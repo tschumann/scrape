@@ -18,7 +18,7 @@ Python 3
 
 Running tests
 -------------
-bin/python test.py
+bin/python tests.py
 
 Updating
 --------

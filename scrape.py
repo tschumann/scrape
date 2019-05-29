@@ -25,7 +25,7 @@ class Page:
 	embeds = []
 	objects = []
 			
-	def __init__(self, url):
+	def __init__(self, url: str):
 		# cut off the URL fragment (if any)
 		(defragged_url, frag) = urllib.parse.urldefrag(url)
 		# split the URL into its components
@@ -47,7 +47,7 @@ class Page:
 		"""
 		return self.domain
 		
-	def should_process_page(self, url):
+	def should_process_page(self, url: str):
 		"""
 		Whether this page should be processed. Only process pages that are on the same domain as the first requested page.
 		"""
@@ -100,7 +100,7 @@ class Page:
 		for child in self.children:
 			child.save()
 
-	def _process_html(self, html):
+	def _process_html(self, html: str):
 		# parse the response HTML
 		soup = bs4.BeautifulSoup(html, "html.parser")
 
@@ -141,7 +141,7 @@ class Page:
 
 class DownloadManager:
 
-	def __init__(self, url):
+	def __init__(self, url: str):
 		page = Page(url)
 		page.save()
 

@@ -34,9 +34,14 @@ class Page:
 		self.raw_url = url
 		self.normalised_url = split_url.geturl()
 
-		# TODO: clean up the domain as there may be a trailing :portnum
+		# TODO: enforce leading protocol otherwise split_url ends up broken
 		self.domain = split_url.netloc
 		self.path = split_url.path
+
+		# if there is a :portnum
+		if ':' in self.domain:
+			# slice it off
+			self.domain = ''.join(self.domain.split(':')[:-1])
 		
 		if self.path == '/':
 			self.path = 'index.html'

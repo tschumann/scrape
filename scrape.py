@@ -34,7 +34,6 @@ class Page:
 		self.raw_url = url
 		self.normalised_url = split_url.geturl()
 
-		# TODO: enforce leading protocol otherwise split_url ends up broken
 		self.domain = split_url.netloc
 		self.path = split_url.path
 
@@ -153,6 +152,10 @@ class DownloadManager:
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print("No site specified")
+		sys.exit()
+
+	if not sys.argv[1].startswith("http://") and not sys.argv[1].startswith("https://"):
+		print("Specify a protocol for the URL")
 		sys.exit()
 
 	download_manager = DownloadManager(sys.argv[1])

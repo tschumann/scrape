@@ -26,6 +26,9 @@ class Page:
 	objects = []
 			
 	def __init__(self, url: str):
+		if not url.startswith("http://") and not url.startswith("https://"):
+			raise Exception("URL requires a protocol")
+
 		# cut off the URL fragment (if any)
 		(defragged_url, frag) = urllib.parse.urldefrag(url)
 		# split the URL into its components
@@ -154,8 +157,8 @@ if __name__ == '__main__':
 		print("No site specified")
 		sys.exit()
 
-	if not sys.argv[1].startswith("http://") and not sys.argv[1].startswith("https://"):
-		print("Specify a protocol for the URL")
+	try:
+		download_manager = DownloadManager(sys.argv[1])
+	except Exception as e:
+		print("Encountered an error: " + str(e))
 		sys.exit()
-
-	download_manager = DownloadManager(sys.argv[1])

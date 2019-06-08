@@ -30,6 +30,9 @@ class TestScrape(unittest.TestCase):
 	def test_get_domain_ip_address_port(self):
 		page = Page("http://0.0.0.0:80")
 		self.assertEqual(page.get_domain(), "0.0.0.0")
+
+	def test_get_domain_no_protocol(self):
+		self.assertRaises(Exception, Page, "dev.lan")
 		
 	def test_should_process_page_same_domain_same_scheme(self):
 		page = Page("http://dev.lan")

@@ -7,23 +7,6 @@ import urllib.parse
 from requests.exceptions import ConnectionError
 
 class Page:
-	# the URL that was passed in
-	raw_url = ''
-	normalised_url = ''
-	# the pages that are linked from this page
-	children = []
-	# this page's domain
-	domain = ''
-	# this page's path (bit after the domain)
-	path = ''
-	# this page's content
-	links = []
-	sounds = []
-	images = []
-	scripts = []
-	videos = []
-	embeds = []
-	objects = []
 			
 	def __init__(self, url: str):
 		if not url.startswith("http://") and not url.startswith("https://"):
@@ -34,11 +17,16 @@ class Page:
 		# split the URL into its components
 		split_url = urllib.parse.urlparse(defragged_url)
 
+		# the URL that was passed in
 		self.raw_url = url
 		self.normalised_url = split_url.geturl()
 
+		# this page's domain
 		self.domain = split_url.netloc
+		# this page's path (bit after the domain)
 		self.path = split_url.path
+
+		self.children = None
 
 		# if there is a :portnum
 		if ':' in self.domain:

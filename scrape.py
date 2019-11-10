@@ -134,19 +134,14 @@ class Page:
 		for object in self.objects:
 			pass
 
-class DownloadManager:
-
-	def __init__(self, url: str):
-		page = Page(url)
-		page.save()
-
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print("No site specified")
 		sys.exit()
 
 	try:
-		download_manager = DownloadManager(sys.argv[1])
+		page = Page(sys.argv[1])
+		page.save()
 	except Exception as e:
 		print("Encountered an error: " + str(e))
 		sys.exit()

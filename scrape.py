@@ -30,10 +30,13 @@ class Page:
 
 		# if there is a :portnum
 		if ':' in self.domain:
+			print("Dealing with port number in URL")
 			# slice it off
 			self.domain = ''.join(self.domain.split(':')[:-1])
-		
-		if self.path == '/':
+
+		# deal with absence or presence of trailing slash
+		if self.path == '' or self.path == '/':
+			print("Dealing with lack of path")
 			self.path = 'index.html'
 	
 	def get_domain(self):
@@ -57,6 +60,7 @@ class Page:
 		Download the page.
 		"""
 		try:
+			print("Downloading site")
 			response = requests.get(self.raw_url)
 		except ConnectionError:
 			print("ConnectionError when connecting to " + self.raw_url)
@@ -69,7 +73,8 @@ class Page:
 		
 		if 'content-type' in response.headers:
 			content_type = response.headers['content-type']
-			page = open(self.domain + "/" + self.path, 'wb')
+			print("Saving " + self.path + " in " + self.get_domain())
+			page = open(self.get_domain() + "/" + self.path, 'wb')
 			page.write(response.content)
 			page.close()
 
@@ -109,8 +114,9 @@ class Page:
 		self.objects = soup.find_all("object")
 
 	def save(self):
+		print("Saving site")
 		if not os.path.exists(self.get_domain()):
-			print("Creating directory " + self.get_domain())
+			print("Creating directory " + self.get_domain() + " in " + os.getcwd())
 			os.makedirs(self.get_domain())
 
 		html = self._download_html()

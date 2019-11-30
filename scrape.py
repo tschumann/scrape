@@ -120,6 +120,10 @@ class Page:
 			os.makedirs(self.get_domain())
 
 		html = self._download_html()
+
+		if html is None:
+			return
+
 		self._process_html(html)
 
 		for image in self.images:

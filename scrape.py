@@ -127,7 +127,14 @@ class Page:
 		self._process_html(html)
 
 		for image in self.images:
-			pass
+			url = image['src']
+			parsed_url = urllib.parse.urlparse(url)
+
+			if parsed_url.netloc == "":
+				# TODO: deal with protocol
+				url = self.domain + "/" + url
+
+			print("Downloading " + url)
 
 		for sound in self.sounds:
 			pass

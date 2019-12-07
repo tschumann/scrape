@@ -21,6 +21,8 @@ class Page:
 		self.raw_url = url
 		self.normalised_url = split_url.geturl()
 
+		# this page's protocol
+		self.protocol = split_url.scheme
 		# this page's domain
 		self.domain = split_url.netloc
 		# this page's path (bit after the domain)
@@ -130,9 +132,10 @@ class Page:
 			url = image['src']
 			parsed_url = urllib.parse.urlparse(url)
 
+			# if the image is a relative path
 			if parsed_url.netloc == "":
-				# TODO: deal with protocol
-				url = self.domain + "/" + url
+				# TODO: deal with port?
+				url = self.protocol + "://" + self.domain + "/" + url
 
 			print("Downloading " + url)
 

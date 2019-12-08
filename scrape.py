@@ -111,6 +111,7 @@ class Page:
 		self.sounds = soup.find_all("audio")
 		self.images = soup.find_all("img")
 		self.scripts = soup.find_all("script")
+		self.stylesheets = soup.find_all("link")
 		self.videos = soup.find_all("video")
 		self.embeds = soup.find_all("embed")
 		self.objects = soup.find_all("object")
@@ -143,7 +144,18 @@ class Page:
 			pass
 
 		for script in self.scripts:
-			pass
+			if 'src' not in script:
+				print("Skipping inline script tag")
+
+		for stylesheet in self.stylesheets:
+			if 'rel' in stylesheet and stylesheet['rel'] == "stylesheet":
+				url = stylesheet['href']
+				parsed_url = urllib.parse.urlparse(url)
+
+				# if the image is a relative path
+				if parsed_url.netloc == "":
+					# TODO: deal with port?
+					url = self.protocol + "://" + self.domain + "/" + url
 		
 		for video in self.videos:
 			pass

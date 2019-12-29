@@ -116,6 +116,17 @@ class Page:
 		self.embeds = soup.find_all("embed")
 		self.objects = soup.find_all("object")
 
+	def _get_full_url(self, url):
+		full_url = url
+		parsed_url = urllib.parse.urlparse(url)
+
+		# if the URL is a relative path
+		if parsed_url.netloc == "":
+			# TODO: deal with port?
+			full_url = self.protocol + "://" + self.domain + "/" + url
+
+		return full_url
+
 	def save(self):
 		print("Saving site")
 		if not os.path.exists(self.get_domain()):
@@ -130,13 +141,7 @@ class Page:
 		self._process_html(html)
 
 		for image in self.images:
-			url = image['src']
-			parsed_url = urllib.parse.urlparse(url)
-
-			# if the image is a relative path
-			if parsed_url.netloc == "":
-				# TODO: deal with port?
-				url = self.protocol + "://" + self.domain + "/" + url
+			url = self._get_full_url(image['src'])
 
 			print("Downloading " + url)
 
@@ -144,18 +149,20 @@ class Page:
 			pass
 
 		for script in self.scripts:
-			if 'src' not in script:
+			if script.get('src', None) is not None:
+				url = self._get_full_url(script['src'])
+
+				print("Downloading " + url)
+			else:
 				print("Skipping inline script tag")
 
 		for stylesheet in self.stylesheets:
-			if 'rel' in stylesheet and stylesheet['rel'] == "stylesheet":
-				url = stylesheet['href']
-				parsed_url = urllib.parse.urlparse(url)
+			if stylesheet.get('rel', None) == ['stylesheet']:
+				url = self._get_full_url(stylesheet['href'])
 
-				# if the image is a relative path
-				if parsed_url.netloc == "":
-					# TODO: deal with port?
-					url = self.protocol + "://" + self.domain + "/" + url
+				print("Downloading " + url)
+			else:
+				print("Skipping link tag that isn't for a stylesheet")
 		
 		for video in self.videos:
 			pass
@@ -175,5 +182,5 @@ if __name__ == '__main__':
 		page = Page(sys.argv[1])
 		page.save()
 	except Exception as e:
-		print("Encountered an error: " + str(e))
+		print("Encountered an error of type " + e.__class__.__name__ + ": " + str(e))
 		sys.exit()

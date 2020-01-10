@@ -12,7 +12,7 @@ from scrape.scrape import Page
 class TestScrape(unittest.TestCase):
 
 	def tearDown(self):
-		if os.path.exists('dev.lan'):
+		if os.path.exists("dev.lan"):
 			os.rmdir("dev.lan")
 		
 	def test_get_domain(self):
@@ -50,7 +50,17 @@ class TestScrape(unittest.TestCase):
 		page = Page("http://dev.lan")
 		page._download_html = self._mock_download_html
 		page.save()
-		self.assertEqual(os.path.exists('dev.lan'), True)
+		self.assertEqual(os.path.exists("dev.lan"), True)
+
+	def test_get_full_url_relative(self):
+		page = Page("http://dev.lan")
+		full_url = page._get_full_url("path/image.jpg")
+		self.assertEqual(full_url, "http://dev.lan/path/image.jpg")
+
+	def test_get_full_url_absolute(self):
+		page = Page("http://dev.lan")
+		full_url = page._get_full_url("http://some.site/path/image.jpg")
+		self.assertEqual(full_url, "http://some.site/path/image.jpg")
 
 	def _mock_download_html(self):
 		return ""

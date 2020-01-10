@@ -116,7 +116,7 @@ class Page:
 		self.embeds = soup.find_all("embed")
 		self.objects = soup.find_all("object")
 
-	def _get_full_url(self, url):
+	def _get_full_url(self, url: str):
 		full_url = url
 		parsed_url = urllib.parse.urlparse(url)
 

@@ -57,28 +57,37 @@ class Page:
 		# TODO: clean up the domain as there may be a trailing :portnum
 		return self.domain == split_url.netloc
 	
-	def _download_html(self):
+	def _download_item(self, url: str):
 		"""
-		Download the page.
+		Download the item at the URL.
 		"""
 		try:
 			print("Downloading site")
-			response = requests.get(self.raw_url)
+			response = requests.get(url)
 		except ConnectionError:
-			print("ConnectionError when connecting to " + self.raw_url)
+			print("ConnectionError when connecting to " + url)
 			return None
 		
 		if not response.ok:
-			print("Could not access " + self.raw_url)
-			
+			print("Could not access " + url)
+
 			return None
 		
 		if 'content-type' in response.headers:
-			content_type = response.headers['content-type']
-			print("Saving " + self.path + " in " + self.get_domain())
-			page = open(self.get_domain() + "/" + self.path, 'wb')
-			page.write(response.content)
-			page.close()
+			split_url = urllib.parse.urlparse(url)
+			path = split_url.path
+			if path == '' or path == '/':
+				path = 'index.html'
+			if path[0] == '/':
+				path = path[1:]
+			directory = self.get_domain() + "/" + os.path.dirname(path)
+			if directory != "" and not os.path.exists(os.path.abspath(directory)):
+				print("Creating directory " + directory)
+				os.makedirs(directory)
+			print("Saving " + path + " in " + self.get_domain())
+			item = open(self.get_domain() + "/" + path, 'wb')
+			item.write(response.content)
+			item.close()
 
 			return response.content
 		else:
@@ -129,13 +138,15 @@ class Page:
 
 	def save(self):
 		print("Saving site")
+
 		if not os.path.exists(self.get_domain()):
 			print("Creating directory " + self.get_domain() + " in " + os.getcwd())
 			os.makedirs(self.get_domain())
 
-		html = self._download_html()
+		html = self._download_item(self.raw_url)
 
 		if html is None:
+			print("Got no content")
 			return
 
 		self._process_html(html)
@@ -144,6 +155,7 @@ class Page:
 			url = self._get_full_url(image['src'])
 
 			print("Downloading " + url)
+			self._download_item(url)
 
 		for sound in self.sounds:
 			pass

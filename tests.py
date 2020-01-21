@@ -48,7 +48,7 @@ class TestScrape(unittest.TestCase):
 
 	def test_download_creates_directory(self):
 		page = Page("http://dev.lan")
-		page._download_html = self._mock_download_html
+		page._download_item = self._mock_download_item
 		page.save()
 		self.assertEqual(os.path.exists("dev.lan"), True)
 
@@ -62,7 +62,7 @@ class TestScrape(unittest.TestCase):
 		full_url = page._get_full_url("http://some.site/path/image.jpg")
 		self.assertEqual(full_url, "http://some.site/path/image.jpg")
 
-	def _mock_download_html(self):
+	def _mock_download_item(self, url: str):
 		return ""
 
 if __name__ == '__main__':

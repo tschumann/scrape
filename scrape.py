@@ -6,6 +6,12 @@ import urllib.parse
 
 from requests.exceptions import ConnectionError
 
+log_stdout = False
+
+def log(string: str):
+	if log_stdout:
+		print(string)
+
 class Page:
 			
 	def __init__(self, url: str):
@@ -32,13 +38,13 @@ class Page:
 
 		# if there is a :portnum
 		if ':' in self.domain:
-			print("Dealing with port number in URL")
+			log("Dealing with port number in URL")
 			# slice it off
 			self.domain = ''.join(self.domain.split(':')[:-1])
 
 		# deal with absence or presence of trailing slash
 		if self.path == '' or self.path == '/':
-			print("Dealing with lack of path")
+			log("Dealing with lack of path")
 			self.path = 'index.html'
 	
 	def get_domain(self):
@@ -62,14 +68,14 @@ class Page:
 		Download the item at the URL.
 		"""
 		try:
-			print("Downloading site")
+			log("Downloading site")
 			response = requests.get(url)
 		except ConnectionError:
-			print("ConnectionError when connecting to " + url)
+			log("ConnectionError when connecting to " + url)
 			return None
 		
 		if not response.ok:
-			print("Could not access " + url)
+			log("Could not access " + url)
 
 			return None
 		
@@ -82,16 +88,16 @@ class Page:
 				path = path[1:]
 			directory = self.get_domain() + "/" + os.path.dirname(path)
 			if directory != "" and not os.path.exists(os.path.abspath(directory)):
-				print("Creating directory " + directory)
+				log("Creating directory " + directory)
 				os.makedirs(directory)
-			print("Saving " + path + " in " + self.get_domain())
+			log("Saving " + path + " in " + self.get_domain())
 			item = open(self.get_domain() + "/" + path, 'wb')
 			item.write(response.content)
 			item.close()
 
 			return response.content
 		else:
-			print("No content-type in response headers")
+			log("No content-type in response headers")
 			return None
 	
 	def _download_children(self):
@@ -137,16 +143,16 @@ class Page:
 		return full_url
 
 	def save(self):
-		print("Saving site")
+		log("Saving site")
 
 		if not os.path.exists(self.get_domain()):
-			print("Creating directory " + self.get_domain() + " in " + os.getcwd())
+			log("Creating directory " + self.get_domain() + " in " + os.getcwd())
 			os.makedirs(self.get_domain())
 
 		html = self._download_item(self.raw_url)
 
 		if html is None:
-			print("Got no content")
+			log("Got no content")
 			return
 
 		self._process_html(html)
@@ -154,7 +160,7 @@ class Page:
 		for image in self.images:
 			url = self._get_full_url(image['src'])
 
-			print("Downloading " + url)
+			log("Downloading " + url)
 			self._download_item(url)
 
 		for sound in self.sounds:
@@ -164,17 +170,17 @@ class Page:
 			if script.get('src', None) is not None:
 				url = self._get_full_url(script['src'])
 
-				print("Downloading " + url)
+				log("Downloading " + url)
 			else:
-				print("Skipping inline script tag")
+				log("Skipping inline script tag")
 
 		for stylesheet in self.stylesheets:
 			if stylesheet.get('rel', None) == ['stylesheet']:
 				url = self._get_full_url(stylesheet['href'])
 
-				print("Downloading " + url)
+				log("Downloading " + url)
 			else:
-				print("Skipping link tag that isn't for a stylesheet")
+				log("Skipping link tag that isn't for a stylesheet")
 		
 		for video in self.videos:
 			pass
@@ -189,6 +195,9 @@ if __name__ == '__main__':
 	if len(sys.argv) < 2:
 		print("No site specified")
 		sys.exit()
+
+	if len(sys.argv) > 2 and sys.argv[2] == "-v":
+		log_stdout = True
 
 	try:
 		page = Page(sys.argv[1])

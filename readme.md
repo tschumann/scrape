@@ -6,7 +6,7 @@ scrape is a work in progress website downloader.
 Usage
 =====
 ```
-bin/python scrape.py https://example.com
+bin/python scrape.py https://example.com -v
 ```
 
 

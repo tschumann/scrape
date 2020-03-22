@@ -34,7 +34,7 @@ class Page:
 		# this page's path (bit after the domain)
 		self.path = split_url.path
 
-		self.children = None
+		self.children = []
 
 		# if there is a :portnum
 		if ':' in self.domain:
@@ -68,7 +68,7 @@ class Page:
 		Download the item at the URL.
 		"""
 		try:
-			log("Downloading site")
+			log("Downloading item")
 			response = requests.get(url)
 		except ConnectionError:
 			log("ConnectionError when connecting to " + url)
@@ -104,11 +104,11 @@ class Page:
 		"""
 		Download the child pages
 		"""
-		if not self.children:
+		if len(self.children) == 0:
 			# look at all the links on the page
 			for link in self.links:
 				# pull out the URL
-				url = self.link.get('href')
+				url = link.get('href')
 				# if the URL is on the same domain
 				if self.should_process_page(url):
 					# add it to the list of pages to download
@@ -156,6 +156,7 @@ class Page:
 			return
 
 		self._process_html(html)
+		self._download_children()
 
 		for image in self.images:
 			url = self._get_full_url(image['src'])
@@ -204,4 +205,6 @@ if __name__ == '__main__':
 		page.save()
 	except Exception as e:
 		print("Encountered an error of type " + e.__class__.__name__ + ": " + str(e))
+		if log_stdout:
+			print(traceback.format_exc())
 		sys.exit()

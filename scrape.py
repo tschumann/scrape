@@ -59,10 +59,17 @@ class Page:
 		"""
 		# parse the URL in question
 		split_url = urllib.parse.urlparse(url)
-		
+
 		# TODO: clean up the domain as there may be a trailing :portnum
-		return self.domain == split_url.netloc
-	
+		is_same_domain = (self.domain == split_url.netloc)
+
+		if is_same_domain:
+			log("Page is on " + split_url.netloc + " so it should be processed")
+		else:
+			log("Page is on " + split_url.netloc + " so it not should be processed")
+
+		return is_same_domain
+
 	def _download_item(self, url: str):
 		"""
 		Download the item at the URL.

@@ -75,7 +75,7 @@ class Page:
 		Download the item at the URL.
 		"""
 		try:
-			log("Downloading item")
+			log("Downloading " + url)
 			response = requests.get(url)
 		except ConnectionError:
 			log("ConnectionError when connecting to " + url)
@@ -168,7 +168,6 @@ class Page:
 		for image in self.images:
 			url = self._get_full_url(image['src'])
 
-			log("Downloading " + url)
 			self._download_item(url)
 
 		for sound in self.sounds:
@@ -178,7 +177,7 @@ class Page:
 			if script.get('src', None) is not None:
 				url = self._get_full_url(script['src'])
 
-				log("Downloading " + url)
+				self._download_item(url)
 			else:
 				log("Skipping inline script tag")
 

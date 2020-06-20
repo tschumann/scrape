@@ -179,6 +179,7 @@ class Page:
 		for sound in self.sounds:
 			pass
 
+		# download .js files
 		for script in self.scripts:
 			if script.get('src', None) is not None:
 				url = self._get_full_url(script['src'])
@@ -187,11 +188,12 @@ class Page:
 			else:
 				log("Skipping inline script tag")
 
+		# download .css files
 		for stylesheet in self.stylesheets:
 			if stylesheet.get('rel', None) == ['stylesheet']:
 				url = self._get_full_url(stylesheet['href'])
 
-				log("Downloading " + url)
+				self._download_item(url)
 			else:
 				log("Skipping link tag that isn't for a stylesheet")
 		

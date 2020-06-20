@@ -52,6 +52,13 @@ class Page:
 		Get the domain that this page is from.
 		"""
 		return self.domain
+
+	def are_domains_same(self, domain: str):
+		"""
+		Whether the passed domain is the same as the current domain.
+		"""
+		# TODO: check for trailing :portnum in domain?
+		return self.get_domain() == domain
 		
 	def should_process_page(self, url: str):
 		"""
@@ -60,8 +67,7 @@ class Page:
 		# parse the URL in question
 		split_url = urllib.parse.urlparse(url)
 
-		# TODO: clean up the domain as there may be a trailing :portnum
-		is_same_domain = (self.domain == split_url.netloc)
+		is_same_domain = self.are_domains_same(split_url.netloc)
 
 		if is_same_domain:
 			log("Page is on " + split_url.netloc + " so it should be processed")
@@ -145,7 +151,7 @@ class Page:
 		# if the URL is a relative path
 		if parsed_url.netloc == "":
 			# TODO: deal with port?
-			full_url = self.protocol + "://" + self.domain + "/" + url
+			full_url = self.protocol + "://" + self.get_domain() + "/" + url
 
 		return full_url
 

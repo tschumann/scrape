@@ -1,6 +1,6 @@
 import os
-import unittest
 import sys
+import unittest
 
 from unittest.mock import MagicMock
 
@@ -31,8 +31,20 @@ class TestScrape(unittest.TestCase):
 		page = Page("http://0.0.0.0:80")
 		self.assertEqual(page.get_domain(), "0.0.0.0")
 
+	def test_get_domain_https(self):
+		page = Page("https://dev.lan")
+		self.assertEqual(page.get_domain(), "dev.lan")
+
 	def test_get_domain_no_protocol(self):
 		self.assertRaises(Exception, Page, "dev.lan")
+
+	def test_are_domains_same_same(self):
+		page = Page("http://dev.lan")
+		self.assertEqual(page.are_domains_same("dev.lan"), True)
+
+	def test_are_domains_same_different(self):
+		page = Page("http://dev.lan")
+		self.assertEqual(page.are_domains_same("fake.lan"), False)
 		
 	def test_should_process_page_same_domain_same_scheme(self):
 		page = Page("http://dev.lan")

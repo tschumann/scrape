@@ -35,6 +35,7 @@ class Page:
 		self.path = split_url.path
 
 		self.children = []
+		self.processed = []
 
 		# if there is a :portnum
 		if ':' in self.domain:
@@ -43,7 +44,11 @@ class Page:
 			self.domain = ''.join(self.domain.split(':')[:-1])
 
 		# deal with absence or presence of trailing slash
-		if self.path == '' or self.path == '/':
+		if self.path == '':
+			log("Dealing with lack of path")
+			self.path = '/index.html'
+		# deal with absence or presence of trailing slash
+		if self.path == '/':
 			log("Dealing with lack of path")
 			self.path = 'index.html'
 	
@@ -58,7 +63,7 @@ class Page:
 		Whether the passed domain is the same as the current domain.
 		"""
 		# TODO: check for trailing :portnum in domain?
-		return self.get_domain() == domain
+		return ((self.get_domain() + self.path) == domain) or (self.get_domain() in domain)
 		
 	def should_process_page(self, url: str):
 		"""
@@ -67,7 +72,16 @@ class Page:
 		# parse the URL in question
 		split_url = urllib.parse.urlparse(url)
 
-		is_same_domain = self.are_domains_same(split_url.netloc)
+		if url.endswith('.jpg'):
+			return True
+
+		is_same_domain = self.are_domains_same(split_url.netloc + split_url.path)
+
+		if not is_same_domain:
+			is_same_domain = (split_url.netloc + split_url.path) in self.raw_url
+
+		if url in self.processed:
+			return False
 
 		if is_same_domain:
 			log("Page is on " + split_url.netloc + " so it should be processed")
@@ -91,7 +105,9 @@ class Page:
 			log("Could not access " + url)
 
 			return None
-		
+
+		self.processed.append(url)
+
 		if 'content-type' in response.headers:
 			split_url = urllib.parse.urlparse(url)
 			path = split_url.path
@@ -99,6 +115,8 @@ class Page:
 				path = 'index.html'
 			if path[0] == '/':
 				path = path[1:]
+			if path[-1] == '/':
+				path += 'index.html'
 			directory = self.get_domain() + "/" + os.path.dirname(path)
 			if directory != "" and not os.path.exists(os.path.abspath(directory)):
 				log("Creating directory " + directory)
@@ -122,6 +140,8 @@ class Page:
 			for link in self.links:
 				# pull out the URL
 				url = link.get('href')
+				if url is None:
+					continue
 				# if the URL is on the same domain
 				if self.should_process_page(url):
 					# add it to the list of pages to download

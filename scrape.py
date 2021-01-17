@@ -36,6 +36,8 @@ class Page:
 
 		self.children = []
 		self.processed = []
+		
+		self.normalised_cache = {}
 
 		# if there is a :portnum
 		if ':' in self.domain:
@@ -51,6 +53,18 @@ class Page:
 		if self.path == '/':
 			log("Dealing with lack of path")
 			self.path = 'index.html'
+
+	def normalise_url(self, url: str):
+		"""
+		Take a URL and put it in a canonical form
+		"""
+		normalised_url = self.normalised_cache.get(url, None)
+
+		if not normalised_url:
+			normalised_url = str
+			self.normalised_cache[str] = normalised_url
+		
+		return normalised_url
 	
 	def get_domain(self):
 		"""

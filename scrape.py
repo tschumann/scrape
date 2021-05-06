@@ -16,7 +16,7 @@ class Page:
 			
 	def __init__(self, url: str):
 		if not url.startswith("http://") and not url.startswith("https://"):
-			raise Exception("URL requires a protocol")
+			raise Exception("URL requires a valid protocol")
 
 		# cut off the URL fragment (if any)
 		(defragged_url, frag) = urllib.parse.urldefrag(url)
@@ -61,8 +61,8 @@ class Page:
 		normalised_url = self.normalised_cache.get(url, None)
 
 		if not normalised_url:
-			normalised_url = str
-			self.normalised_cache[str] = normalised_url
+			normalised_url = url
+			self.normalised_cache[url] = normalised_url
 		
 		return normalised_url
 	
@@ -75,10 +75,11 @@ class Page:
 	def are_domains_same(self, domain: str):
 		"""
 		Whether the passed domain is the same as the current domain.
+		Either domain may be a subdomain of the other for example.
 		"""
 		# TODO: check for trailing :portnum in domain?
-		return ((self.get_domain() + self.path) == domain) or (self.get_domain() in domain)
-		
+		return self.get_domain().endswith(domain) or domain.endswith(self.get_domain())
+
 	def should_process_page(self, url: str):
 		"""
 		Whether this page should be processed. Only process pages that are on the same domain as the first requested page.
@@ -86,13 +87,11 @@ class Page:
 		# parse the URL in question
 		split_url = urllib.parse.urlparse(url)
 
-		if url.endswith('.jpg'):
+		# TODO: this should be more thorough in matching things that are not HTML pages
+		if url.endswith('.jpg') or url.endswith('.png'):
 			return True
 
-		is_same_domain = self.are_domains_same(split_url.netloc + split_url.path)
-
-		if not is_same_domain:
-			is_same_domain = (split_url.netloc + split_url.path) in self.raw_url
+		is_same_domain = self.are_domains_same(split_url.netloc)
 
 		if url in self.processed:
 			return False

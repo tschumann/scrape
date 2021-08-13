@@ -96,6 +96,10 @@ class Page:
 		if url in self.processed:
 			return False
 
+		# skip has links
+		if url.startswith('#'):
+			return False
+
 		if is_same_domain:
 			log("Page is on " + split_url.netloc + " so it should be processed")
 		else:
@@ -111,7 +115,7 @@ class Page:
 			log("Downloading " + url)
 			response = requests.get(url)
 		except ConnectionError:
-			log("ConnectionError when connecting to " + url)
+			print("ConnectionError when connecting to " + url)
 			return None
 		
 		if not response.ok:
@@ -252,6 +256,4 @@ if __name__ == '__main__':
 		page.save()
 	except Exception as e:
 		print("Encountered an error of type " + e.__class__.__name__ + ": " + str(e))
-		if log_stdout:
-			print(traceback.format_exc())
 		sys.exit()

@@ -45,6 +45,10 @@ class TestScrape(unittest.TestCase):
 	def test_are_domains_same_different(self):
 		page = Page("http://dev.lan")
 		self.assertEqual(page.are_domains_same("fake.lan"), False)
+
+	def test_are_domains_same_same_subdomain(self):
+		page = Page("http://dev.lan")
+		self.assertEqual(page.are_domains_same("wheels.dev.lan"), True)
 		
 	def test_should_process_page_same_domain_same_scheme(self):
 		page = Page("http://dev.lan")
@@ -57,6 +61,10 @@ class TestScrape(unittest.TestCase):
 	def test_should_process_page_different_domain(self):
 		page = Page("http://dev.lan")
 		self.assertEqual(page.should_process_page("https://www.wizzle.wazzle"), False)
+
+	def test_should_process_page_hash_link(self):
+		page = Page("http://dev.lan")
+		self.assertEqual(page.should_process_page("#hash"), False)
 
 	def test_download_creates_directory(self):
 		page = Page("http://dev.lan")

@@ -7,83 +7,71 @@ from unittest.mock import MagicMock
 # add the parent directory to the path (make it absolute to this works regardless of where it's called from)
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + os.path.sep + "..")
 
-from scrape import Page
+from scrape import Site
 
 class TestScrape(unittest.TestCase):
 
 	def tearDown(self):
 		if os.path.exists("dev.lan"):
 			os.rmdir("dev.lan")
-		
-	def test_get_domain(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.get_domain(), "dev.lan")
 
-	def test_get_domain_port(self):
-		page = Page("http://dev.lan:80")
-		self.assertEqual(page.get_domain(), "dev.lan")
+	def test_get_url_components(self):
+		site = Site("http://dev.lan")
+		self.assertEqual(site.get_url_components("http://dev.lan").get("netloc"), "dev.lan")
+		self.assertEqual(site.get_url_components("http://www.dev.lan").get("netloc"), "www.dev.lan")
 
-	def test_get_domain_ip_address(self):
-		page = Page("http://0.0.0.0")
-		self.assertEqual(page.get_domain(), "0.0.0.0")
+	def test_normalise_url(self):
+		site = Site("http://dev.lan")
+		self.assertEqual(site.normalise_url("http://dev.lan/index.html"), "http://dev.lan/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan/"), "http://dev.lan")
+		self.assertEqual(site.normalise_url("http://dev.lan"), "http://dev.lan")
+		self.assertEqual(site.normalise_url("http://www.dev.lan/"), "http://www.dev.lan")
+		self.assertEqual(site.normalise_url("http://www.dev.lan"), "http://www.dev.lan")
+		self.assertEqual(site.normalise_url("http://dev.lan:80/index.html"), "http://dev.lan/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan:443/index.html"), "http://dev.lan/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan/index.html#hi"), "http://dev.lan/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan/index.html?test=1"), "http://dev.lan/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan/index.html?test"), "http://dev.lan/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan:80/index.html?test=1#test"), "http://dev.lan/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan/somewhere/index.html"), "http://dev.lan/somewhere/index.html")
+		self.assertEqual(site.normalise_url("http://dev.lan/somewhere"), "http://dev.lan/somewhere")
+		self.assertEqual(site.normalise_url("http://dev.lan/somewhere/"), "http://dev.lan/somewhere")
+		self.assertEqual(site.normalise_url("http://dev.lan/somewhere/?test=1#test"), "http://dev.lan/somewhere")
+		self.assertEqual(site.normalise_url("http://dev.lan/test.pdf"), "http://dev.lan/test.pdf")
+		self.assertEqual(site.normalise_url("http://dev.lan/somewhere/test.pdf"), "http://dev.lan/somewhere/test.pdf")
+		self.assertEqual(site.normalise_url(""), "http://dev.lan")
+		self.assertEqual(site.normalise_url("#"), "http://dev.lan")
+		self.assertEqual(site.normalise_url("/"), "http://dev.lan")
+		self.assertEqual(site.normalise_url("/somewhere"), "http://dev.lan/somewhere")
+		self.assertEqual(site.normalise_url("/somewhere/"), "http://dev.lan/somewhere")
+		self.assertEqual(site.normalise_url("js/file.js"), "http://dev.lan/js/file.js")
 
-	def test_get_domain_ip_address_port(self):
-		page = Page("http://0.0.0.0:80")
-		self.assertEqual(page.get_domain(), "0.0.0.0")
+	def test_get_directory_for_url(self):
+		site = Site("http://dev.lan")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/index.html", "text/html"), "dev.lan/")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/", "text/html"), "dev.lan/")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/somewhere", "text/html"), "dev.lan/somewhere/")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/somewhere/", "text/html"), "dev.lan/somewhere/")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/test.pdf", "application/pdf"), "dev.lan/")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/somewhere/test.pdf", "application/pdf"), "dev.lan/somewhere/")
 
-	def test_get_domain_https(self):
-		page = Page("https://dev.lan")
-		self.assertEqual(page.get_domain(), "dev.lan")
+	def test_get_path_for_url(self):
+		site = Site("http://dev.lan")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/index.html", "text/html"), "dev.lan/index.html")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/", "text/html"), "dev.lan/index.html")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/somewhere", "text/html"), "dev.lan/somewhere/index.html")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/somewhere/", "text/html"), "dev.lan/somewhere/index.html")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/test.pdf", "application/pdf"), "dev.lan/test.pdf")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/somewhere/test.pdf", "application/pdf"), "dev.lan/somewhere/test.pdf")
 
-	def test_get_domain_no_protocol(self):
-		self.assertRaises(Exception, Page, "dev.lan")
-
-	def test_are_domains_same_same(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.are_domains_same("dev.lan"), True)
-
-	def test_are_domains_same_different(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.are_domains_same("fake.lan"), False)
-
-	def test_are_domains_same_same_subdomain(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.are_domains_same("wheels.dev.lan"), True)
-		
-	def test_should_process_page_same_domain_same_scheme(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.should_process_page("http://dev.lan/news"), True)
-	
-	def test_should_process_page_same_domain_different_scheme(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.should_process_page("https://dev.lan/news"), True)
-		
-	def test_should_process_page_different_domain(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.should_process_page("https://www.wizzle.wazzle"), False)
-
-	def test_should_process_page_hash_link(self):
-		page = Page("http://dev.lan")
-		self.assertEqual(page.should_process_page("#hash"), False)
-
-	def test_download_creates_directory(self):
-		page = Page("http://dev.lan")
-		page._download_item = self._mock_download_item
-		page.save()
-		self.assertEqual(os.path.exists("dev.lan"), True)
-
-	def test_get_full_url_relative(self):
-		page = Page("http://dev.lan")
-		full_url = page._get_full_url("path/image.jpg")
-		self.assertEqual(full_url, "http://dev.lan/path/image.jpg")
-
-	def test_get_full_url_absolute(self):
-		page = Page("http://dev.lan")
-		full_url = page._get_full_url("http://some.site/path/image.jpg")
-		self.assertEqual(full_url, "http://some.site/path/image.jpg")
-
-	def _mock_download_item(self, url: str):
-		return ""
+	def test_should_download_asset(self):
+		site = Site("http://dev.lan")
+		self.assertEqual(site.should_download_asset("http://dev.lan"), True)
+		self.assertEqual(site.should_download_asset("http://dev.lan/"), True)
+		self.assertEqual(site.should_download_asset("http://dev.lan/test.pdf"), True)
+		self.assertEqual(site.should_download_asset("http://dev.lan/somewhere/test.pdf"), True)
+		self.assertEqual(site.should_download_asset("http://www.dev.lan"), False)
+		self.assertEqual(site.should_download_asset("http://horse.radish"), False)
 
 if __name__ == '__main__':
     unittest.main()

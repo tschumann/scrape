@@ -1,6 +1,6 @@
 scrape
 ======
-scrape is a work in progress website downloader.
+scrape is a website downloader. It downloads all pages on the same domain as the initially provided URL.
 
 
 Usage
@@ -14,8 +14,6 @@ Installing
 ----------
 ```
 pip install pipenv
-```
-```
 pipenv install
 ```
 
@@ -24,14 +22,4 @@ Running tests
 -------------
 ```
 python tests.py
-```
-
-
-Updating
---------
-```
-pipenv install package
-```
-```
-pipenv lock
 ```

@@ -12,236 +12,232 @@ def log(string: str):
 	if log_stdout:
 		print(string)
 
-class Page:
-			
+class Site:
+
 	def __init__(self, url: str):
 		if not url.startswith("http://") and not url.startswith("https://"):
 			raise Exception("URL requires a valid protocol")
 
+		# keep track of the initial URL so we can check the domain
+		self.url = self.normalise_url(url)
+
+		# insert the initial URL into the processing queue
+		self.pages = {
+			url: {
+				"processed": False
+			}
+		}
+
+	def get_url_components(self, url: str) -> dict:
+		"""
+		Split the given URL into a normalised scheme, network location and path.
+		"""
+
+		# if it's a relative URL
+		if (not url.startswith("http://")) and (not url.startswith("https://")):
+			# recursive but shouldn't fail as the constructor makes sure the initial URL starts with a scheme
+			initial_url_components = self.get_url_components(self.url)
+
+			# TODO: this isn't stricly right - work out the absolute path based on the current page
+			if not url.startswith("/"):
+				url = "/" + url
+
+			url = initial_url_components.get("scheme") + initial_url_components.get("netloc") + url
+
 		# cut off the URL fragment (if any)
 		(defragged_url, frag) = urllib.parse.urldefrag(url)
 		# split the URL into its components
-		split_url = urllib.parse.urlparse(defragged_url)
+		parsed_url = urllib.parse.urlparse(defragged_url)
 
-		# the URL that was passed in
-		self.raw_url = url
-		self.normalised_url = split_url.geturl()
+		# do extra processing of netloc
+		netloc = parsed_url.netloc
 
-		# this page's protocol
-		self.protocol = split_url.scheme
-		# this page's domain
-		self.domain = split_url.netloc
-		# this page's path (bit after the domain)
-		self.path = split_url.path
+		# if there is a port specified as part of the URL
+		if ":" in netloc:
+			# this assumes there is only one : in the netloc
+			netloc = "".join(netloc.split(":")[:-1])
 
-		self.children = []
-		self.processed = []
-		
-		self.normalised_cache = {}
+		# do extra processing of path
+		path = parsed_url.path
 
-		# if there is a :portnum
-		if ':' in self.domain:
-			log("Dealing with port number in URL")
-			# slice it off
-			self.domain = ''.join(self.domain.split(':')[:-1])
+		# if the path has a trailing /
+		if path.endswith("/"):
+			path = path[:-1]
 
-		# deal with absence or presence of trailing slash
-		if self.path == '':
-			log("Dealing with lack of path")
-			self.path = '/index.html'
-		# deal with absence or presence of trailing slash
-		if self.path == '/':
-			log("Dealing with lack of path")
-			self.path = 'index.html'
+		# ignore query string and fragment
+		return {
+			"scheme": parsed_url.scheme + "://",
+			"netloc": netloc,
+			"path": path
+		}
 
-	def normalise_url(self, url: str):
+	def normalise_url(self, url: str) -> str:
 		"""
-		Take a URL and put it in a canonical form
+		Return a normalised version of the given URL.
 		"""
-		normalised_url = self.normalised_cache.get(url, None)
+		url_components = self.get_url_components(url)
 
-		if not normalised_url:
-			normalised_url = url
-			self.normalised_cache[url] = normalised_url
-		
-		return normalised_url
-	
-	def get_domain(self):
+		return url_components.get("scheme") + url_components.get("netloc") + url_components.get("path")
+
+	def get_directory_for_url(self, url: str, content_type: str) -> str:
 		"""
-		Get the domain that this page is from.
+		Return a filesystem directory equivalent of the given URL.
 		"""
-		return self.domain
+		url_components = self.get_url_components(url)
 
-	def are_domains_same(self, domain: str):
-		"""
-		Whether the passed domain is the same as the current domain.
-		Either domain may be a subdomain of the other for example.
-		"""
-		# TODO: check for trailing :portnum in domain?
-		return self.get_domain().endswith(domain) or domain.endswith(self.get_domain())
+		directory = url_components.get("netloc") + url_components.get("path")
 
-	def should_process_page(self, url: str):
-		"""
-		Whether this page should be processed. Only process pages that are on the same domain as the first requested page.
-		"""
-		# parse the URL in question
-		split_url = urllib.parse.urlparse(url)
-
-		# TODO: this should be more thorough in matching things that are not HTML pages
-		if url.endswith('.jpg') or url.endswith('.png'):
-			return True
-
-		is_same_domain = self.are_domains_same(split_url.netloc)
-
-		if url in self.processed:
-			return False
-
-		# skip has links
-		if url.startswith('#'):
-			return False
-
-		if is_same_domain:
-			log("Page is on " + split_url.netloc + " so it should be processed")
+		if content_type.startswith("text/html"):
+			if directory.endswith("index.html"):
+				directory = directory[:-len("index.html")]
 		else:
-			log("Page is on " + split_url.netloc + " so it not should be processed")
+			# treat it like a path and remove the 'file' from the 'directory'
+			(directory, _) = os.path.split(directory)
 
-		return is_same_domain
+		# normalise the ending
+		if not directory.endswith("/"):
+			directory = directory + "/"
 
-	def _download_item(self, url: str):
+		return directory
+
+	def get_path_for_url(self, url: str, content_type: str) -> str:
 		"""
-		Download the item at the URL.
+		Return a filesystem path equivalent of the given URL.
 		"""
+		url_components = self.get_url_components(url)
+
+		path = url_components.get("path")
+
+		if content_type.startswith("text/html"):
+			if not path.endswith("/index.html"):
+				path = path + "/index.html"
+
+		return url_components.get("netloc") + path
+
+	def should_download_asset(self, url: str) -> bool:
+		"""
+		Whether this asset should be downloaded as part of this site.
+		"""
+		log("should_download_asset " + url)
+		site_netloc = self.get_url_components(self.url).get("netloc")
+		asset_netloc = self.get_url_components(url).get("netloc")
+
+		return site_netloc == asset_netloc
+
+	def download_asset(self, url: str) -> str:
 		try:
 			log("Downloading " + url)
 			response = requests.get(url)
 		except ConnectionError:
-			print("ConnectionError when connecting to " + url)
+			log("ConnectionError when connecting to " + url)
 			return None
 		
 		if not response.ok:
-			log("Could not access " + url)
-
+			log("Could not get " + url)
 			return None
 
-		self.processed.append(url)
+		self.pages[url] = self.pages.get(url, {"processed": True})
 
-		if 'content-type' in response.headers:
-			split_url = urllib.parse.urlparse(url)
-			path = split_url.path
-			if path == '' or path == '/':
-				path = 'index.html'
-			if path[0] == '/':
-				path = path[1:]
-			if path[-1] == '/':
-				path += 'index.html'
-			directory = self.get_domain() + "/" + os.path.dirname(path)
-			if directory != "" and not os.path.exists(os.path.abspath(directory)):
+		if "content-type" in response.headers:
+			# TODO: content-type should be properly parsed (there may be a trailing ; charset=utf-8 for example)
+			content_type = response.headers["content-type"]
+			log("Got " + url + " with content-type " + content_type)
+
+			directory = self.get_directory_for_url(url, content_type)
+			path = self.get_path_for_url(url, content_type)
+
+			# make sure the path to download to exists on the filesystem
+			if not os.path.exists(os.path.abspath(directory)):
 				log("Creating directory " + directory)
 				os.makedirs(directory)
-			log("Saving " + path + " in " + self.get_domain())
-			item = open(self.get_domain() + "/" + path, 'wb')
-			item.write(response.content)
-			item.close()
 
-			return response.content
+			log("Saving " + path)
+			asset = open(path, "wb")
+			asset.write(response.content)
+			asset.close()
+
+			# if it's HTML, return the HTML for further processing
+			if content_type.startswith("text/html"):
+				return response.content
+			else:
+				return None
 		else:
 			log("No content-type in response headers")
 			return None
-	
-	def _download_children(self):
-		"""
-		Download the child pages
-		"""
-		if len(self.children) == 0:
-			# look at all the links on the page
-			for link in self.links:
-				# pull out the URL
-				url = link.get('href')
-				if url is None:
-					continue
-				# if the URL is on the same domain
-				if self.should_process_page(url):
-					# add it to the list of pages to download
-					self.children.append(Page(url))
 
-		for child in self.children:
-			child.save()
-
-	def _process_html(self, html: str):
+	def find_assets(self, html: str):
+		"""
+		Look through the HTML for more assets to download.
+		"""
 		# parse the response HTML
 		soup = bs4.BeautifulSoup(html, "html.parser")
 
-		# find all links and media
-		self.links = soup.find_all("a")
-		self.sounds = soup.find_all("audio")
-		self.images = soup.find_all("img")
-		self.scripts = soup.find_all("script")
-		self.stylesheets = soup.find_all("link")
-		self.videos = soup.find_all("video")
-		self.embeds = soup.find_all("embed")
-		self.objects = soup.find_all("object")
+		anchors = soup.find_all("a")
 
-	def _get_full_url(self, url: str):
-		full_url = url
-		parsed_url = urllib.parse.urlparse(url)
+		for anchor in anchors:
+			url = anchor.get("href")
+			normalised_url = self.normalise_url(url)
 
-		# if the URL is a relative path
-		if parsed_url.netloc == "":
-			# TODO: deal with port?
-			full_url = self.protocol + "://" + self.get_domain() + "/" + url
+			if normalised_url not in self.pages:
+				# only download pages that are on the same domain
+				if self.should_download_asset(normalised_url):
+					log("Adding " + normalised_url)
+					self.pages[normalised_url] = {"processed": False}
 
-		return full_url
+		sounds = soup.find_all("audio")
+		images = soup.find_all("img")
+		scripts = soup.find_all("script")
+
+		for script in scripts:
+			url = script.get("src")
+
+			# only handle script tags that have an src attribute (i.e. that are not inline)
+			if url:
+				normalised_url = self.normalise_url(url)
+
+				if normalised_url not in self.pages:
+					log("Adding " + normalised_url)
+					self.pages[normalised_url] = {"processed": False}
+
+		links = soup.find_all("link")
+
+		for link in links:
+			# only handle link tags that are for stylesheets or favicons
+			if ("stylesheet" in link.get("rel")) or ("icon" in link.get("rel")):
+				url = link.get("href")
+				normalised_url = self.normalise_url(url)
+
+				if normalised_url not in self.pages:
+					log("Adding " + normalised_url)
+					self.pages[normalised_url] = {"processed": False}
+		
+		videos = soup.find_all("video")
+		embeds = soup.find_all("embed")
+		objects = soup.find_all("object")
 
 	def save(self):
-		log("Saving site")
+		should_continue = True
 
-		if not os.path.exists(self.get_domain()):
-			log("Creating directory " + self.get_domain() + " in " + os.getcwd())
-			os.makedirs(self.get_domain())
+		while should_continue:
+			has_unprocessed_urls = False
 
-		html = self._download_item(self.raw_url)
+			# look at each tracked URL
+			for url, value in list(self.pages.items()):
+				# if it hasn't been processed yet
+				if value.get("processed") == False:
+					has_unprocessed_urls = True
+					# save it and get the HTML
+					html = self.download_asset(url)
+					# mark it as saved
+					self.pages[url].update({"processed": True})
 
-		if html is None:
-			log("Got no content")
-			return
+					# if HTML was returned
+					if html:
+						# find more links in the HTML
+						self.find_assets(html)
 
-		self._process_html(html)
-		self._download_children()
-
-		for image in self.images:
-			url = self._get_full_url(image['src'])
-
-			self._download_item(url)
-
-		for sound in self.sounds:
-			pass
-
-		# download .js files
-		for script in self.scripts:
-			if script.get('src', None) is not None:
-				url = self._get_full_url(script['src'])
-
-				self._download_item(url)
-			else:
-				log("Skipping inline script tag")
-
-		# download .css files
-		for stylesheet in self.stylesheets:
-			if stylesheet.get('rel', None) == ['stylesheet']:
-				url = self._get_full_url(stylesheet['href'])
-
-				self._download_item(url)
-			else:
-				log("Skipping link tag that isn't for a stylesheet")
-		
-		for video in self.videos:
-			pass
-		
-		for embed in self.embeds:
-			pass
-		
-		for object in self.objects:
-			pass
+			if has_unprocessed_urls == False:
+				should_continue = False
 
 if __name__ == '__main__':
 	if len(sys.argv) < 2:
@@ -252,8 +248,11 @@ if __name__ == '__main__':
 		log_stdout = True
 
 	try:
-		page = Page(sys.argv[1])
-		page.save()
+		site = Site(sys.argv[1])
+		site.save()
 	except Exception as e:
-		print("Encountered an error of type " + e.__class__.__name__ + ": " + str(e))
+		if log_stdout == True:
+			raise e
+		else:
+			print("Encountered an error of type " + e.__class__.__name__ + ": " + str(e))
 		sys.exit()

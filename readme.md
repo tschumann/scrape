@@ -12,8 +12,8 @@ python scrape.py https://example.com -v
 ```
 
 
-Installing
-----------
+Installation
+------------
 ```
 pip install pipenv
 pipenv install

@@ -1,6 +1,8 @@
 scrape
 ======
-scrape is a website downloader. It downloads all pages on the same domain as the initially provided URL.
+scrape is a website downloader in less than 300 lines of Python.
+
+It recursively downloads all pages, images, scripts, stylesheets and favicons on the same domain as the initially provided URL.
 
 
 Usage

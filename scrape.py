@@ -19,7 +19,7 @@ class Site:
 			raise Exception("URL requires a valid protocol")
 
 		# keep track of the initial URL so we can check the domain
-		self.url = self.normalise_url(url)
+		self.url = self.normalise_url(url, url)
 
 		# insert the initial URL into the processing queue
 		self.pages = {
@@ -28,7 +28,7 @@ class Site:
 			}
 		}
 
-	def get_url_components(self, url: str) -> dict:
+	def get_url_components(self, url: str, context: str) -> dict:
 		"""
 		Split the given URL into a normalised scheme, network location and path.
 		"""
@@ -36,13 +36,14 @@ class Site:
 		# if it's a relative URL
 		if (not url.startswith("http://")) and (not url.startswith("https://")):
 			# recursive but shouldn't fail as the constructor makes sure the initial URL starts with a scheme
-			initial_url_components = self.get_url_components(self.url)
+			initial_url_components = self.get_url_components(self.url, context)
 
-			# TODO: this isn't stricly right - work out the absolute path based on the current page
+			# if it's a relative URL
 			if not url.startswith("/"):
-				url = "/" + url
-
-			url = initial_url_components.get("scheme") + initial_url_components.get("netloc") + url
+				# add the path of the current page to make it an absolute URL
+				url = context + "/" + url
+			else:
+				url = initial_url_components.get("scheme") + initial_url_components.get("netloc") + url
 
 		# cut off the URL fragment (if any)
 		(defragged_url, frag) = urllib.parse.urldefrag(url)
@@ -71,11 +72,12 @@ class Site:
 			"path": path
 		}
 
-	def normalise_url(self, url: str) -> str:
+	def normalise_url(self, url: str, context: str) -> str:
 		"""
 		Return a normalised version of the given URL.
+		This is so that different versions of the same URL aren't processed multiple times.
 		"""
-		url_components = self.get_url_components(url)
+		url_components = self.get_url_components(url, context)
 
 		return url_components.get("scheme") + url_components.get("netloc") + url_components.get("path")
 
@@ -83,7 +85,7 @@ class Site:
 		"""
 		Return a filesystem directory equivalent of the given URL.
 		"""
-		url_components = self.get_url_components(url)
+		url_components = self.get_url_components(url, None)
 
 		directory = url_components.get("netloc") + url_components.get("path")
 
@@ -104,7 +106,7 @@ class Site:
 		"""
 		Return a filesystem path equivalent of the given URL.
 		"""
-		url_components = self.get_url_components(url)
+		url_components = self.get_url_components(url, None)
 
 		path = url_components.get("path")
 
@@ -117,12 +119,15 @@ class Site:
 	def should_download_asset(self, url: str) -> bool:
 		"""
 		Whether this asset should be downloaded as part of this site.
+		Only download pages on the same domain as the initial URL.
 		"""
-		log("should_download_asset " + url)
-		site_netloc = self.get_url_components(self.url).get("netloc")
-		asset_netloc = self.get_url_components(url).get("netloc")
+		site_netloc = self.get_url_components(self.url, None).get("netloc")
+		asset_netloc = self.get_url_components(url, None).get("netloc")
+		should_download = (site_netloc == asset_netloc)
 
-		return site_netloc == asset_netloc
+		log("should_download_asset " + url + " " + str(should_download))
+
+		return should_download
 
 	def download_asset(self, url: str) -> str:
 		try:
@@ -165,7 +170,7 @@ class Site:
 			log("No content-type in response headers")
 			return None
 
-	def find_assets(self, html: str):
+	def find_assets(self, html: str, context: str):
 		"""
 		Look through the HTML for more assets to download.
 		"""
@@ -176,16 +181,29 @@ class Site:
 
 		for anchor in anchors:
 			url = anchor.get("href")
-			normalised_url = self.normalise_url(url)
+			normalised_url = self.normalise_url(url, context)
 
 			if normalised_url not in self.pages:
 				# only download pages that are on the same domain
 				if self.should_download_asset(normalised_url):
 					log("Adding " + normalised_url)
 					self.pages[normalised_url] = {"processed": False}
+				else:
+					# keep track of external pages so they don't need to be processed each time they're found
+					self.pages[normalised_url] = {"skip": True}
 
 		sounds = soup.find_all("audio")
 		images = soup.find_all("img")
+
+		for image in images:
+			url = image.get("src")
+
+			normalised_url = self.normalise_url(url, context)
+
+			if normalised_url not in self.pages:
+				log("Adding " + normalised_url)
+				self.pages[normalised_url] = {"processed": False}
+
 		scripts = soup.find_all("script")
 
 		for script in scripts:
@@ -193,7 +211,7 @@ class Site:
 
 			# only handle script tags that have an src attribute (i.e. that are not inline)
 			if url:
-				normalised_url = self.normalise_url(url)
+				normalised_url = self.normalise_url(url, context)
 
 				if normalised_url not in self.pages:
 					log("Adding " + normalised_url)
@@ -205,7 +223,7 @@ class Site:
 			# only handle link tags that are for stylesheets or favicons
 			if ("stylesheet" in link.get("rel")) or ("icon" in link.get("rel")):
 				url = link.get("href")
-				normalised_url = self.normalise_url(url)
+				normalised_url = self.normalise_url(url, context)
 
 				if normalised_url not in self.pages:
 					log("Adding " + normalised_url)
@@ -223,6 +241,10 @@ class Site:
 
 			# look at each tracked URL
 			for url, value in list(self.pages.items()):
+				# if the page should be skipped
+				if value.get("skip") == True:
+					# skip it
+					continue
 				# if it hasn't been processed yet
 				if value.get("processed") == False:
 					has_unprocessed_urls = True
@@ -234,7 +256,7 @@ class Site:
 					# if HTML was returned
 					if html:
 						# find more links in the HTML
-						self.find_assets(html)
+						self.find_assets(html, url)
 
 			if has_unprocessed_urls == False:
 				should_continue = False

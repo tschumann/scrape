@@ -1,3 +1,6 @@
+v0.3 (??/??/????)
+- Updated dependencies
+
 v0.2 (22/04/2022)
 - Added img downloading
 - Properly handle relative paths in URLs

@@ -45,6 +45,8 @@ class TestScrape(unittest.TestCase):
 		self.assertEqual(site.normalise_url("/somewhere", "http://dev.lan"), "http://dev.lan/somewhere")
 		self.assertEqual(site.normalise_url("/somewhere/", "http://dev.lan"), "http://dev.lan/somewhere")
 		self.assertEqual(site.normalise_url("js/file.js", "http://dev.lan"), "http://dev.lan/js/file.js")
+		self.assertEqual(site.normalise_url("file.htm", "http://dev.lan"), "http://dev.lan/file.htm")
+		self.assertEqual(site.normalise_url("../file.htm", "http://dev.lan/path/"), "http://dev.lan/file.htm")
 
 	def test_get_directory_for_url(self):
 		site = Site("http://dev.lan")

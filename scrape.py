@@ -20,6 +20,8 @@ class Site:
 
 		# keep track of the initial URL so we can check the domain
 		self.url = self.normalise_url(url, url)
+		base_domain_components = self.get_url_components(url, None)
+		self.base_domain = base_domain_components["scheme"] + base_domain_components["netloc"]
 
 		# insert the initial URL into the processing queue
 		self.pages = {
@@ -38,10 +40,17 @@ class Site:
 			# recursive but shouldn't fail as the constructor makes sure the initial URL starts with a scheme
 			initial_url_components = self.get_url_components(self.url, context)
 
-			# if it's a relative URL
+			# if it's not a full URL
 			if not url.startswith("/"):
-				# add the path of the current page to make it an absolute URL
-				url = context + "/" + url
+				if url == "":
+					url = context
+				# TODO: handle arbitrary nesting
+				elif url.startswith("../"):
+					separators_in_context = [pos for pos, char in enumerate(context) if char == "/"]
+					url = context[0:separators_in_context[-2] + 1] + url[len("../"):]
+				else:
+					# add the base domain to make it an absolute URL
+					url = self.base_domain + "/" + url
 			else:
 				url = initial_url_components.get("scheme") + initial_url_components.get("netloc") + url
 
@@ -181,16 +190,18 @@ class Site:
 
 		for anchor in anchors:
 			url = anchor.get("href")
-			normalised_url = self.normalise_url(url, context)
 
-			if normalised_url not in self.pages:
-				# only download pages that are on the same domain
-				if self.should_download_asset(normalised_url):
-					log("Adding " + normalised_url)
-					self.pages[normalised_url] = {"processed": False}
-				else:
-					# keep track of external pages so they don't need to be processed each time they're found
-					self.pages[normalised_url] = {"skip": True}
+			if url:
+				normalised_url = self.normalise_url(url, context)
+
+				if normalised_url not in self.pages:
+					# only download pages that are on the same domain
+					if self.should_download_asset(normalised_url):
+						log("Adding " + normalised_url)
+						self.pages[normalised_url] = {"processed": False}
+					else:
+						# keep track of external pages so they don't need to be processed each time they're found
+						self.pages[normalised_url] = {"skip": True}
 
 		sounds = soup.find_all("audio")
 		images = soup.find_all("img")

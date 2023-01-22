@@ -99,8 +99,11 @@ class Site:
 		directory = url_components.get("netloc") + url_components.get("path")
 
 		if content_type.startswith("text/html"):
-			if directory.endswith("index.html"):
-				directory = directory[:-len("index.html")]
+			# TODO: check for file extensions more broadly?
+			if directory.endswith(".html") or directory.endswith(".htm"):
+				last_path_separator_position = directory.rfind("/")
+				# get everything except the 'file' name
+				directory = directory[:last_path_separator_position]
 		else:
 			# treat it like a path and remove the 'file' from the 'directory'
 			(directory, _) = os.path.split(directory)
@@ -120,7 +123,9 @@ class Site:
 		path = url_components.get("path")
 
 		if content_type.startswith("text/html"):
-			if not path.endswith("/index.html"):
+			# TODO: check for file extensions more broadly?
+			if not path.endswith(".html") and not path.endswith(".htm"):
+				last_path_separator_position = path.rfind("/")
 				path = path + "/index.html"
 
 		return url_components.get("netloc") + path
@@ -191,6 +196,7 @@ class Site:
 		for anchor in anchors:
 			url = anchor.get("href")
 
+			# only handle a tags that have a href attribute
 			if url:
 				normalised_url = self.normalise_url(url, context)
 
@@ -209,11 +215,13 @@ class Site:
 		for image in images:
 			url = image.get("src")
 
-			normalised_url = self.normalise_url(url, context)
+			# only handle img tags that have an src attribute
+			if url:
+				normalised_url = self.normalise_url(url, context)
 
-			if normalised_url not in self.pages:
-				log("Adding " + normalised_url)
-				self.pages[normalised_url] = {"processed": False}
+				if normalised_url not in self.pages:
+					log("Adding " + normalised_url)
+					self.pages[normalised_url] = {"processed": False}
 
 		scripts = soup.find_all("script")
 

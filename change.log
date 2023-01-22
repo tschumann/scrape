@@ -2,6 +2,8 @@ v0.3 (??/??/????)
 - Updated dependencies
 - Fixed crash on missing/no href attribute for a tag
 - Improved handling of non-absolute URLs
+- Improved handling of file paths
+- Fixed crash on missing/no src attribute for img tag
 
 v0.2 (22/04/2022)
 - Added img downloading

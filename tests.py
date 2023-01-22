@@ -51,9 +51,9 @@ class TestScrape(unittest.TestCase):
 	def test_get_directory_for_url(self):
 		site = Site("http://dev.lan")
 		self.assertEqual(site.get_directory_for_url("http://dev.lan/index.html", "text/html"), "dev.lan/")
-		self.assertEqual(site.get_directory_for_url("http://dev.lan/index.htm", "text/html"), "dev.lan/index.htm/") # TODO: should be dev.lan/
-		self.assertEqual(site.get_directory_for_url("http://dev.lan/path.html", "text/html"), "dev.lan/path.html/") # TODO: should be dev.lan/
-		self.assertEqual(site.get_directory_for_url("http://dev.lan/path.htm", "text/html"), "dev.lan/path.htm/") # TODO: should be dev.lan/
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/index.htm", "text/html"), "dev.lan/")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/path.html", "text/html"), "dev.lan/")
+		self.assertEqual(site.get_directory_for_url("http://dev.lan/path.htm", "text/html"), "dev.lan/")
 		self.assertEqual(site.get_directory_for_url("http://dev.lan/", "text/html"), "dev.lan/")
 		self.assertEqual(site.get_directory_for_url("http://dev.lan/somewhere", "text/html"), "dev.lan/somewhere/")
 		self.assertEqual(site.get_directory_for_url("http://dev.lan/somewhere/", "text/html"), "dev.lan/somewhere/")
@@ -63,9 +63,9 @@ class TestScrape(unittest.TestCase):
 	def test_get_path_for_url(self):
 		site = Site("http://dev.lan")
 		self.assertEqual(site.get_path_for_url("http://dev.lan/index.html", "text/html"), "dev.lan/index.html")
-		self.assertEqual(site.get_path_for_url("http://dev.lan/index.htm", "text/html"), "dev.lan/index.htm/index.html") # TODO: should be dev.lan/index.htm
-		self.assertEqual(site.get_path_for_url("http://dev.lan/path.html", "text/html"), "dev.lan/path.html/index.html") # TODO: should be dev.lan/path.html
-		self.assertEqual(site.get_path_for_url("http://dev.lan/path.htm", "text/html"), "dev.lan/path.htm/index.html") # TODO: should be dev.lan/path.htm
+		self.assertEqual(site.get_path_for_url("http://dev.lan/index.htm", "text/html"), "dev.lan/index.htm")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/path.html", "text/html"), "dev.lan/path.html")
+		self.assertEqual(site.get_path_for_url("http://dev.lan/path.htm", "text/html"), "dev.lan/path.htm")
 		self.assertEqual(site.get_path_for_url("http://dev.lan/", "text/html"), "dev.lan/index.html")
 		self.assertEqual(site.get_path_for_url("http://dev.lan/somewhere", "text/html"), "dev.lan/somewhere/index.html")
 		self.assertEqual(site.get_path_for_url("http://dev.lan/somewhere/", "text/html"), "dev.lan/somewhere/index.html")
